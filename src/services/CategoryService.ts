@@ -8,6 +8,10 @@ export class CategoryService {
     return this.repo.findByUserId(userId)
   }
 
+  async createCategory(input: Omit<Category, 'id' | 'createdAt'>): Promise<Result<Category>> {
+    return this.repo.create(input)
+  }
+
   async ensureDefaultCategories(userId: string): Promise<Result<Category[]>> {
     return this.repo.seedDefaultCategories(userId)
   }

@@ -10,7 +10,8 @@ import { BaixaModal } from '@/components/BaixaModal'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { useMonthNav } from '@/hooks/useMonthNav'
 import { useTransactions, useCreateTransaction, useUpdateTransaction, useBaixa, useUndoBaixa, useDeleteTransaction } from '@/hooks/useTransactions'
-import { useCategories } from '@/hooks/useCategories'
+import { useCategories, useCreateCategory } from '@/hooks/useCategories'
+import { CategoriesModal } from '@/components/CategoriesModal'
 import { useEvolution } from '@/hooks/useEvolution'
 import { StorageRepository } from '@/repositories/StorageRepository'
 import { StorageService } from '@/services/StorageService'
@@ -29,6 +30,8 @@ export default function MonthPage() {
   const [density, setDensity] = useState<'comfortable' | 'compact'>('comfortable')
   const [modalEntry, setModalEntry] = useState<TransactionVM | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [showCategories, setShowCategories] = useState(false)
+  const [categoryError, setCategoryError] = useState<string | null>(null)
   const router = useRouter()
 
   const { currentMonth, prev, next, goToday, isToday, today } = useMonthNav()
@@ -42,6 +45,7 @@ export default function MonthPage() {
   const evoQuery = useEvolution(userId || undefined, currentMonth)
 
   const createTx = useCreateTransaction(userId)
+  const createCat = useCreateCategory(userId)
   const updateTx = useUpdateTransaction(userId, currentMonth)
   const baixa = useBaixa(userId, currentMonth)
   const undoBaixa = useUndoBaixa(userId, currentMonth)
@@ -105,6 +109,7 @@ export default function MonthPage() {
         }}
         userName={userName}
         userEmail={userEmail}
+        onManageCategories={() => { setCategoryError(null); setShowCategories(true) }}
       />
 
       <main className="app-main">
@@ -188,6 +193,22 @@ export default function MonthPage() {
           onClose={() => setModalEntry(null)}
           onSave={handleBaixa}
           isSaving={isSaving}
+        />
+      )}
+
+      {showCategories && (
+        <CategoriesModal
+          categories={categories}
+          onClose={() => setShowCategories(false)}
+          onAdd={input => {
+            setCategoryError(null)
+            createCat.mutate(input, {
+              onSuccess: () => setShowCategories(false),
+              onError: (e) => setCategoryError(e instanceof Error ? e.message : 'Erro ao salvar categoria'),
+            })
+          }}
+          isSaving={createCat.isPending}
+          error={categoryError}
         />
       )}
     </div>

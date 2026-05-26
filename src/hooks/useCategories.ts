@@ -1,24 +1,50 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 import { CategoryRepository } from '@/repositories/CategoryRepository'
 import { CategoryService } from '@/services/CategoryService'
-import type { Category } from '@/domain/types'
+import { slugify } from '@/lib/formatters'
+import type { Category, TransactionType } from '@/domain/types'
+
+function getService() {
+  return new CategoryService(new CategoryRepository(createClient()))
+}
 
 export function useCategories(userId: string | undefined) {
   return useQuery<Category[]>({
     queryKey: ['categories', userId],
     queryFn: async () => {
       if (!userId) return []
-      const supabase = createClient()
-      const repo = new CategoryRepository(supabase)
-      const service = new CategoryService(repo)
-      const result = await service.getCategories(userId)
+      const result = await getService().getCategories(userId)
       if (result.error) throw result.error
       return result.data
     },
     enabled: !!userId,
     staleTime: 5 * 60 * 1000,
+  })
+}
+
+export interface CreateCategoryInput {
+  name: string
+  type: TransactionType
+  color: string
+}
+
+export function useCreateCategory(userId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: CreateCategoryInput) => {
+      const result = await getService().createCategory({
+        userId,
+        name: input.name,
+        type: input.type,
+        color: input.color,
+        slug: slugify(input.name),
+      })
+      if (result.error) throw result.error
+      return result.data
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['categories', userId] }),
   })
 }

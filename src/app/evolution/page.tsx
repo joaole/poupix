@@ -5,14 +5,17 @@ import { useRouter } from 'next/navigation'
 import { Sidebar } from '@/components/Sidebar'
 import { Icon } from '@/components/ui/Icon'
 import { Evolution } from '@/components/evolution/Evolution'
+import { CategoriesModal } from '@/components/CategoriesModal'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { useMonthNav } from '@/hooks/useMonthNav'
 import { useEvolution } from '@/hooks/useEvolution'
-import { useCategories } from '@/hooks/useCategories'
+import { useCategories, useCreateCategory } from '@/hooks/useCategories'
 
 export default function EvolutionPage() {
   const { user, loading: userLoading } = useCurrentUser()
   const [masked, setMasked] = useState(false)
+  const [showCategories, setShowCategories] = useState(false)
+  const [categoryError, setCategoryError] = useState<string | null>(null)
   const router = useRouter()
 
   const { currentMonth } = useMonthNav()
@@ -22,6 +25,7 @@ export default function EvolutionPage() {
 
   const evoQuery = useEvolution(userId || undefined, currentMonth)
   const catQuery = useCategories(userId || undefined)
+  const createCat = useCreateCategory(userId)
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -50,6 +54,7 @@ export default function EvolutionPage() {
         onNavigate={v => router.replace(v === 'month' ? '/month' : '/evolution')}
         userName={userName}
         userEmail={userEmail}
+        onManageCategories={() => { setCategoryError(null); setShowCategories(true) }}
       />
 
       <main className="app-main">
@@ -91,6 +96,22 @@ export default function EvolutionPage() {
           />
         )}
       </main>
+
+      {showCategories && (
+        <CategoriesModal
+          categories={catQuery.data ?? []}
+          onClose={() => setShowCategories(false)}
+          onAdd={input => {
+            setCategoryError(null)
+            createCat.mutate(input, {
+              onSuccess: () => setShowCategories(false),
+              onError: (e) => setCategoryError(e instanceof Error ? e.message : 'Erro ao salvar categoria'),
+            })
+          }}
+          isSaving={createCat.isPending}
+          error={categoryError}
+        />
+      )}
     </div>
   )
 }

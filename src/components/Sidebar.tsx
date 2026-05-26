@@ -12,9 +12,10 @@ interface Props {
   onNavigate: (view: View) => void
   userName: string
   userEmail: string
+  onManageCategories: () => void
 }
 
-export function Sidebar({ active, onNavigate, userName, userEmail }: Props) {
+export function Sidebar({ active, onNavigate, userName, userEmail, onManageCategories }: Props) {
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
@@ -46,7 +47,7 @@ export function Sidebar({ active, onNavigate, userName, userEmail }: Props) {
       </div>
 
       <div className="sidebar-section" style={{ marginTop: 'auto' }}>
-        <UserCard userName={userName} userEmail={userEmail} />
+        <UserCard userName={userName} userEmail={userEmail} onManageCategories={onManageCategories} />
       </div>
     </aside>
   )
@@ -70,7 +71,7 @@ function NavItem({
   )
 }
 
-function UserCard({ userName, userEmail }: { userName: string; userEmail: string }) {
+function UserCard({ userName, userEmail, onManageCategories }: { userName: string; userEmail: string; onManageCategories: () => void }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const router = useRouter()
@@ -113,6 +114,9 @@ function UserCard({ userName, userEmail }: { userName: string; userEmail: string
               <div className="user-email">{userEmail}</div>
             </div>
           </div>
+          <button className="user-menu-item" onClick={() => { setOpen(false); onManageCategories() }}>
+            <Icon name="sliders" size={13} /> Gerenciar categorias
+          </button>
           <div className="user-menu-sep" />
           <button className="user-menu-item danger" onClick={handleLogout}>
             <Icon name="logOut" size={13} /> Sair da conta
